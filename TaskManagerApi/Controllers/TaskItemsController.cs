@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using TaskManagerApi.Models;
 
@@ -13,111 +14,82 @@ namespace TaskManagerApi.Controllers
     [ApiController]
     public class TaskItemsController : ControllerBase
     {
-        private readonly TaskItemContext _context;
+        private readonly List<TaskItem> _context;
 
-        public TaskItemsController(TaskItemContext context)
+        public TaskItemsController()
         {
-            _context = context;
+            _context = new List<TaskItem>() {
+                new TaskItem() {Id = 1, Name = "End Bars education", Description="End succesfully", IsCompleted=false },
+                new TaskItem() {Id = 2, Name = "Enter Bars Group team", Description="I will do it", IsCompleted=false }
+            };
         }
 
         // GET: api/TaskItems
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<TaskItem>>> GetTaskItems()
+        [HttpGet(Name="MyTasks")]
+        public IActionResult GetTaskItems()
         {
-          if (_context.TaskItems == null)
-          {
-              return NotFound();
-          }
-            return await _context.TaskItems.ToListAsync();
+            return Ok(_context);
         }
 
         // GET: api/TaskItems/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<TaskItem>> GetTaskItem(int id)
+        [HttpGet("{id}", Name = "GetTask")]
+        public IActionResult GetTaskItem(int id)
         {
-          if (_context.TaskItems == null)
-          {
-              return NotFound();
-          }
-            var taskItem = await _context.TaskItems.FindAsync(id);
-
-            if (taskItem == null)
+            TaskItem? item = _context.Where(x => x.Id == id).FirstOrDefault();
+            if (item == null)
             {
                 return NotFound();
             }
 
-            return taskItem;
+            return Ok(item);
         }
 
         // PUT: api/TaskItems/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutTaskItem(int id, TaskItem taskItem)
+        [HttpPut("{id}", Name ="UpdateTask")]
+        public IActionResult UpdateTaskItem(int id, TaskItem taskItem)
         {
-            if (id != taskItem.Id)
+            if (id != taskItem.Id || taskItem == null)
             {
                 return BadRequest();
             }
 
-            _context.Entry(taskItem).State = EntityState.Modified;
-
-            try
+            TaskItem item = _context.Where(x =>x.Id == id).FirstOrDefault();
+            if (item == null)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TaskItemExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
-            return NoContent();
+            item.Name = taskItem.Name;
+            item.Description = taskItem.Description;
+            item.IsCompleted = taskItem.IsCompleted;
+            return Ok(item);
         }
 
         // POST: api/TaskItems
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<TaskItem>> PostTaskItem(TaskItem taskItem)
+        [HttpPost(Name ="CreateTask")]
+        public IActionResult CreateTaskItem(TaskItem taskItem)
         {
-          if (_context.TaskItems == null)
-          {
-              return Problem("Entity set 'TaskItemContext.TaskItems'  is null.");
-          }
-            _context.TaskItems.Add(taskItem);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(PostTaskItem), new { id = taskItem.Id }, taskItem);
+            if (taskItem == null)
+            {
+                return null;
+            }
+            _context.Add(taskItem);
+            return Ok();
         }
 
         // DELETE: api/TaskItems/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTaskItem(int id)
+        [HttpDelete("{id}", Name = "DeleteTask")]
+        public IActionResult DeleteTaskItem(int id)
         {
-            if (_context.TaskItems == null)
+            TaskItem? item = _context.Where(x => x.Id == id).FirstOrDefault();
+            if (item == null)
             {
-                return NotFound();
+                return BadRequest();
             }
-            var taskItem = await _context.TaskItems.FindAsync(id);
-            if (taskItem == null)
-            {
-                return NotFound();
-            }
-
-            _context.TaskItems.Remove(taskItem);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool TaskItemExists(int id)
-        {
-            return (_context.TaskItems?.Any(e => e.Id == id)).GetValueOrDefault();
+            _context.Remove(item);
+            return Ok(item);
         }
     }
 }

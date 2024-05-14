@@ -11,9 +11,7 @@ namespace TaskManagerApi
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
-            builder.Services.AddDbContext<TaskItemContext>(opt =>
-                opt.UseInMemoryDatabase("TaskItemList"));
+            builder.Services.AddControllersWithViews();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
@@ -36,7 +34,9 @@ namespace TaskManagerApi
             app.UseAuthorization();
 
 
-            app.MapControllers();
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=TaskItems}/{action=Index}/{id?}");
 
             app.Run();
         }
