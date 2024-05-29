@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using TaskManagerApi.Abstractions;
 using TaskManagerApi.Models;
 
 namespace TaskManagerApi.Controllers
@@ -14,82 +15,60 @@ namespace TaskManagerApi.Controllers
     [ApiController]
     public class TaskItemsController : ControllerBase
     {
-        private readonly List<TaskItem> _context;
+        private readonly ITaskManagerRepository _taskManagerRepository;
 
-        public TaskItemsController()
+        public TaskItemsController(ITaskManagerRepository taskManagerRepository)
         {
-            _context = new List<TaskItem>() {
-                new TaskItem() {Id = 1, Name = "End Bars education", Description="End succesfully", IsCompleted=false },
-                new TaskItem() {Id = 2, Name = "Enter Bars Group team", Description="I will do it", IsCompleted=false }
-            };
+            _taskManagerRepository = taskManagerRepository;
         }
 
         // GET: api/TaskItems
         [HttpGet(Name="MyTasks")]
-        public IActionResult GetTaskItems()
+        public async Task<ActionResult<List<TaskItem>>> GetTaskItems()
         {
-            return Ok(_context);
+            var tasks =  await _taskManagerRepository.Get();
+
+            return Ok(tasks);
         }
 
         // GET: api/TaskItems/5
         [HttpGet("{id}", Name = "GetTask")]
-        public IActionResult GetTaskItem(int id)
+        public async Task<ActionResult<TaskItem>> GetTaskItem(int id)
         {
-            TaskItem? item = _context.Where(x => x.Id == id).FirstOrDefault();
-            if (item == null)
-            {
-                return NotFound();
-            }
+            var taskItem = await _taskManagerRepository.GetById(id);
 
-            return Ok(item);
-        }
-
-        // PUT: api/TaskItems/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}", Name ="UpdateTask")]
-        public IActionResult UpdateTaskItem(int id, TaskItem taskItem)
-        {
-            if (id != taskItem.Id || taskItem == null)
+            if (taskItem == null)
             {
                 return BadRequest();
             }
 
-            TaskItem item = _context.Where(x =>x.Id == id).FirstOrDefault();
-            if (item == null)
-            {
-                return NotFound();
-            }
+            return Ok(taskItem);
+        }
 
-            item.Name = taskItem.Name;
-            item.Description = taskItem.Description;
-            item.IsCompleted = taskItem.IsCompleted;
-            return Ok(item);
+        // PUT: api/TaskItems/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPut("{id}", Name = "UpdateTask")]
+        public async Task<ActionResult> UpdateTaskItem(int id, string name, string description, string type, bool isCompleted)
+        {
+            await _taskManagerRepository.UpdateTaskById(id, name, description, type, isCompleted);
+            return Ok();
         }
 
         // POST: api/TaskItems
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost(Name ="CreateTask")]
-        public IActionResult CreateTaskItem(TaskItem taskItem)
+        public async Task<ActionResult> CreateTaskItem(int id, string name, string description, string type, bool isCompleted)
         {
-            if (taskItem == null)
-            {
-                return null;
-            }
-            _context.Add(taskItem);
+            await _taskManagerRepository.CreateTask(name, description, type, isCompleted);
             return Ok();
         }
 
         // DELETE: api/TaskItems/5
         [HttpDelete("{id}", Name = "DeleteTask")]
-        public IActionResult DeleteTaskItem(int id)
+        public async Task<ActionResult> DeleteTaskItem(int id)
         {
-            TaskItem? item = _context.Where(x => x.Id == id).FirstOrDefault();
-            if (item == null)
-            {
-                return BadRequest();
-            }
-            _context.Remove(item);
-            return Ok(item);
+            await _taskManagerRepository.DeleteTaskById(id);
+            return Ok();
         }
     }
 }
