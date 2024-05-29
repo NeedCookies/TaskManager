@@ -15,10 +15,13 @@ namespace TaskManagerApi.Controllers
     public class AuthenticationController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthenticationController> _logger;
 
-        public AuthenticationController(IConfiguration configuration)
+        public AuthenticationController(IConfiguration configuration,
+            ILogger<AuthenticationController> logger)
         {
             _configuration = configuration;
+            _logger = logger;
         }
         [AllowAnonymous]
         [HttpPost]
@@ -32,8 +35,12 @@ namespace TaskManagerApi.Controllers
             if (authRequest.Role == "Admin")
             {
                 if (authRequest.Password != _configuration.GetValue<string>("SecretSettings:AdminPassword"))
+                {
+                    _logger.LogWarning("User tried to enter as admin, password isn't correct");
                     return BadRequest("Admin password isn't correct: " + authRequest.Password);
+                }
             }
+            _logger.LogWarning("User has entered as admin!");
 
             var claims = new Claim[]
             {

@@ -40,18 +40,19 @@ namespace TaskManagerApi.Repository
             return taskItem;
         }
 
-        public async Task CreateTask(string name, string description, string type, bool isCompleted)
+        public async Task CreateTask(string name, string description, string type, bool isCompleted, DateTime deadLine)
         {
             var taskItem = new TaskItem();
             taskItem.Name = name;
             taskItem.Description = description;
             taskItem.Type = type;
             taskItem.IsCompleted = isCompleted;
+            taskItem.DeadLine = deadLine;
             await _dbContext.Tasks.AddAsync(taskItem);
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task UpdateTaskById(int id, string name, string description, string type, bool isCompleted)
+        public async Task UpdateTaskById(int id, string name, string description, string type, bool isCompleted, DateTime deadLine)
         {
             var taskItem = await _dbContext.Tasks.FirstOrDefaultAsync(task => task.Id == id);
             if (taskItem == null)
@@ -64,6 +65,7 @@ namespace TaskManagerApi.Repository
             taskItem.Description = description;
             taskItem.Type = type;
             taskItem.IsCompleted = isCompleted;
+            taskItem.DeadLine = deadLine;
 
             await _dbContext.SaveChangesAsync();
         }

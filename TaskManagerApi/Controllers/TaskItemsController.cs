@@ -53,18 +53,29 @@ namespace TaskManagerApi.Controllers
         // PUT: api/TaskItems/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}", Name = "UpdateTask")]
-        public async Task<ActionResult> UpdateTaskItem(int id, string name, string description, string type, bool isCompleted)
+        public async Task<ActionResult> UpdateTaskItem(int id, 
+            string name, 
+            string description, 
+            string type, 
+            bool isCompleted,
+            DateTime deadLine
+            )
         {
-            await _taskManagerRepository.UpdateTaskById(id, name, description, type, isCompleted);
+            await _taskManagerRepository.UpdateTaskById(id, name, description, type, isCompleted, deadLine);
             return Ok();
         }
 
         // POST: api/TaskItems
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost(Name ="CreateTask")]
-        public async Task<ActionResult> CreateTaskItem(int id, string name, string description, string type, bool isCompleted)
+        public async Task<ActionResult> CreateTaskItem(int id, 
+            string name, 
+            string description, 
+            string type, 
+            bool isCompleted,
+            DateTime deadLine)
         {
-            await _taskManagerRepository.CreateTask(name, description, type, isCompleted);
+            await _taskManagerRepository.CreateTask(name, description, type, isCompleted, deadLine);
             return Ok();
         }
 
