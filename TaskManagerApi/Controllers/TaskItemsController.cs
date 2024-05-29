@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -12,14 +13,18 @@ using TaskManagerApi.Models;
 namespace TaskManagerApi.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class TaskItemsController : ControllerBase
     {
         private readonly ITaskManagerRepository _taskManagerRepository;
+        private readonly ILogger<TaskItemsController> _logger;
 
-        public TaskItemsController(ITaskManagerRepository taskManagerRepository)
+        public TaskItemsController(ITaskManagerRepository taskManagerRepository, 
+            ILogger<TaskItemsController> logger)
         {
             _taskManagerRepository = taskManagerRepository;
+            _logger = logger;
         }
 
         // GET: api/TaskItems
@@ -27,7 +32,7 @@ namespace TaskManagerApi.Controllers
         public async Task<ActionResult<List<TaskItem>>> GetTaskItems()
         {
             var tasks =  await _taskManagerRepository.Get();
-
+            _logger.LogInformation("GetTaskItems method was called");
             return Ok(tasks);
         }
 
@@ -41,7 +46,7 @@ namespace TaskManagerApi.Controllers
             {
                 return BadRequest();
             }
-
+            _logger.LogInformation($"{nameof(GetTaskItem)} method was called");
             return Ok(taskItem);
         }
 

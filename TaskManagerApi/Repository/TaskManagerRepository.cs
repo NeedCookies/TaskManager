@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskManagerApi.Abstractions;
+using TaskManagerApi.Data;
 using TaskManagerApi.Models;
 
 namespace TaskManagerApi.Repository
@@ -8,10 +9,13 @@ namespace TaskManagerApi.Repository
     public class TaskManagerRepository : ITaskManagerRepository
     {
         private readonly TaskManagerDbContext _dbContext;
+        private readonly ILogger<TaskManagerRepository> _logger;
 
-        public TaskManagerRepository(TaskManagerDbContext dbContext)
+        public TaskManagerRepository(TaskManagerDbContext dbContext,
+            ILogger<TaskManagerRepository> logger)
         {
             _dbContext = dbContext;
+            _logger = logger;
         }
 
         public async Task<List<TaskItem>> Get()
@@ -24,9 +28,16 @@ namespace TaskManagerApi.Repository
 
         public async Task<TaskItem?> GetById(int id)
         {
-            return await _dbContext.Tasks
+            var taskItem = await _dbContext.Tasks
                 .AsNoTracking()
                 .FirstOrDefaultAsync(task => task.Id == id);
+
+            if (taskItem == null)
+            {
+                _logger.LogInformation("User looks for task which doesn't exist, return null");
+            }
+
+            return taskItem;
         }
 
         public async Task CreateTask(string name, string description, string type, bool isCompleted)
@@ -42,8 +53,12 @@ namespace TaskManagerApi.Repository
 
         public async Task UpdateTaskById(int id, string name, string description, string type, bool isCompleted)
         {
-            var taskItem = await _dbContext.Tasks.FirstOrDefaultAsync(task => task.Id == id)
-                ?? throw new NullReferenceException();
+            var taskItem = await _dbContext.Tasks.FirstOrDefaultAsync(task => task.Id == id);
+            if (taskItem == null)
+            {
+                _logger.LogInformation("User tried to update non-existent task");
+                throw new NullReferenceException();
+            }
 
             taskItem.Name = name;
             taskItem.Description = description;
@@ -55,10 +70,14 @@ namespace TaskManagerApi.Repository
 
         public async Task DeleteTaskById(int id)
         {
-            var taskitem = _dbContext.Tasks.FirstOrDefault(task => task.Id == id)
-                ?? throw new NullReferenceException();
+            var taskItem = await _dbContext.Tasks.FirstOrDefaultAsync(task => task.Id == id);
+            if (taskItem == null)
+            {
+                _logger.LogInformation("User tried to delete non-existent task");
+                throw new NullReferenceException();
+            }
 
-            _dbContext.Tasks.Remove(taskitem);
+            _dbContext.Tasks.Remove(taskItem);
             await _dbContext.SaveChangesAsync();
         }
     }
