@@ -28,6 +28,7 @@ namespace TaskManagerApi.Services
                     _configuration.GetValue<string>("EmailOptions:Password"));
                 smtp.EnableSsl = true;
                 await smtp.SendMailAsync(mail);
+                _logger.LogInformation($"Send mail `{message} to {email}`");
             }
         }
     }

@@ -12,7 +12,7 @@ namespace TaskManagerApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthenticationController : ControllerBase
+    public class AuthenticationController : Controller
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthenticationController> _logger;
