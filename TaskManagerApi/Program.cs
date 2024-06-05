@@ -9,6 +9,15 @@ using TaskManagerApi.Authentication;
 using TaskManagerApi.Data;
 using TaskManagerApi.Models;
 using TaskManagerApi.Repository;
+using Serilog;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Logging;
+using Serilog.Events;
+using Serilog.Sinks.OpenSearch;
+using AutoRegisterTemplateVersion = Serilog.Sinks.OpenSearch.AutoRegisterTemplateVersion;
+using CertificateValidations = OpenSearch.Net.CertificateValidations;
+using System.Net;
+
 
 namespace TaskManagerApi
 {
@@ -74,6 +83,29 @@ namespace TaskManagerApi
                 loggingBuilder.AddDebug();
             });
 
+            builder.Logging.ClearProviders();
+            Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine(msg));
+            ServicePointManager.ServerCertificateValidationCallback = (o, certificate, chain, errors) => true;
+            ServicePointManager.ServerCertificateValidationCallback = CertificateValidations.AllowAll;
+
+            var logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.OpenSearch(new OpenSearchSinkOptions(new Uri("https://localhost:9200"))
+                {
+                    AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv6,
+                    MinimumLogEventLevel = LogEventLevel.Verbose,
+                    TypeName = "_doc",
+                    InlineFields = false,
+                    ModifyConnectionSettings = x =>
+                        x.BasicAuthentication("admin", "bars123@superMyPassword")
+                            .ServerCertificateValidationCallback(CertificateValidations.AllowAll)
+                            .ServerCertificateValidationCallback((o, certificate, chain, errors) => true),
+                    IndexFormat = "my-index-{0:yyyy.MM.dd}",
+                })
+                .CreateLogger();
+
+            builder.Logging.ClearProviders();
+            builder.Logging.AddSerilog(logger);
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -98,6 +130,7 @@ namespace TaskManagerApi
                 pattern: "{controller=TaskItems}/{action=Index}/{id?}");*/
 
             app.Run();
+            app.Logger.LogInformation("starting up");
         }
     }
 }
